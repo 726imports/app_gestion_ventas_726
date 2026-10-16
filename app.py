@@ -48,6 +48,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             fecha TEXT NOT NULL,
             producto TEXT NOT NULL,
+            modelo TEXT,
             talle TEXT NOT NULL,
             cantidad INTEGER NOT NULL,
             precio_unitario REAL NOT NULL,
@@ -83,6 +84,14 @@ def init_db():
         ]
         cursor.executemany("INSERT INTO catalogo (nombre, talle, costo, precio_venta) VALUES (?, ?, ?, ?)", productos_iniciales)
         conn.commit()
+    
+    # Asegurar que la tabla ventas tenga la columna modelo si ya existía la BD previa
+    cursor.execute("PRAGMA table_info(ventas)")
+    columns = [col[1] for col in cursor.fetchall()]
+    if "modelo" not in columns:
+        cursor.execute("ALTER TABLE ventas ADD COLUMN modelo TEXT")
+        conn.commit()
+
     conn.close()
 
 init_db()
@@ -111,6 +120,41 @@ with pestanas[0]:
     nombres_productos = catalogo_df["nombre"].unique().tolist()
     
     producto_sel = st.selectbox("Producto", nombres_productos)
+    
+    # Selección o escritura de modelo según el producto
+    modelo_final = ""
+    if producto_sel == "Mallas":
+        modelos_mallas = [
+            "Boardshort All Day",
+            "Boardshort Australia",
+            "Boardshort BAYW",
+            "Boardshort Y2K",
+            "Boardshort RYW",
+            "Boardshort Zero Gravity",
+            "Otro (Escribir modelo...)"
+        ]
+        modelo_opcion = st.selectbox("Modelo de Malla", modelos_mallas)
+        if modelo_opcion == "Otro (Escribir modelo...)":
+            modelo_final = st.text_input("Escribe el nombre del modelo de Malla")
+        else:
+            modelo_final = modelo_opcion
+            
+    elif producto_sel == "Conjunto Musculosa y Short":
+        modelo_opcion = st.selectbox("Modelo / Estilo de Conjunto", ["Estándar", "Otro (Escribir modelo...)"])
+        if modelo_opcion == "Otro (Escribir modelo...)":
+            modelo_final = st.text_input("Escribe el nombre/modelo del Conjunto")
+        else:
+            modelo_final = modelo_opcion
+            
+    elif producto_sel == "Remeras Retro":
+        modelo_opcion = st.selectbox("Modelo / Equipo de Remera Retro", ["Estándar", "Otro (Escribir modelo...)"])
+        if modelo_opcion == "Otro (Escribir modelo...)":
+            modelo_final = st.text_input("Escribe el equipo o modelo de la Remera Retro")
+        else:
+            modelo_final = modelo_opcion
+    else:
+        modelo_final = "N/A"
+
     talles_disponibles = catalogo_df[catalogo_df["nombre"] == producto_sel]["talle"].tolist()
     talle_sel = st.selectbox("Talle / Variante", talles_disponibles)
     
@@ -142,9 +186,9 @@ with pestanas[0]:
             conn = sqlite3.connect(DB_NAME)
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO ventas (fecha, producto, talle, cantidad, precio_unitario, costo_unitario, total, ganancia, cliente, metodo_pago, notas)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (fecha_actual, producto_sel, talle_sel, cantidad, precio_unitario, costo_unitario, total_cobrado, ganancia_neta, cliente, metodo_pago, notas))
+                INSERT INTO ventas (fecha, producto, modelo, talle, cantidad, precio_unitario, costo_unitario, total, ganancia, cliente, metodo_pago, notas)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (fecha_actual, producto_sel, modelo_final, talle_sel, cantidad, precio_unitario, costo_unitario, total_cobrado, ganancia_neta, cliente, metodo_pago, notas))
             conn.commit()
             conn.close()
             st.success("¡Venta registrada exitosamente! 🎉")
@@ -172,13 +216,13 @@ with pestanas[1]:
         with col_m2: st.metric("Ganancia Acumulada", f"${ventas_df['ganancia'].sum():,.0f}")
         with col_m3: st.metric("Unidades Vendidas", int(ventas_df['cantidad'].sum()))
         
-        st.markdown("### 🏆 Top Productos Vendidos")
-        top_prod = ventas_df.groupby(["producto", "talle"])["cantidad"].sum().reset_index()
+        st.markdown("### 🏆 Top Productos y Modelos Vendidos")
+        top_prod = ventas_df.groupby(["producto", "modelo", "talle"])["cantidad"].sum().reset_index()
         top_prod = top_prod.sort_values(by="cantidad", ascending=False).head(5)
         st.dataframe(top_prod, use_container_width=True, hide_index=True)
         
         st.markdown("### 🕒 Últimas Ventas Registradas")
-        st.dataframe(ventas_df[["fecha", "producto", "talle", "cantidad", "total", "metodo_pago", "cliente"]].head(10), use_container_width=True, hide_index=True)
+        st.dataframe(ventas_df[["fecha", "producto", "modelo", "talle", "cantidad", "total", "metodo_pago", "cliente"]].head(10), use_container_width=True, hide_index=True)
     else:
         st.info("Todavía no hay ventas registradas. ¡Registra la primera en la pestaña 'Nueva Venta'!")
 
