@@ -251,9 +251,9 @@ with pestanas[2]:
             else:
                 st.error("Por favor completa el nombre y el talle.")
 
-# ==================== PESTAÑA 4: EXPORTAR VENTAS ====================
+# ==================== PESTAÑA 4: EXPORTAR Y GESTIÓN ====================
 with pestanas[3]:
-    st.subheader("Exportar Historial de Ventas")
+    st.subheader("Exportar y Administrar Ventas")
     ventas_df = get_ventas()
     
     if not ventas_df.empty:
@@ -271,3 +271,19 @@ with pestanas[3]:
         )
     else:
         st.info("No hay datos de ventas para exportar.")
+        
+    st.markdown("---")
+    st.warning("⚠️ **Zona de Mantenimiento**")
+    
+    confirmar_reseteo = st.checkbox("Confirmo que deseo borrar de forma permanente todas las ventas registradas.")
+    if st.button("🗑️ Vaciar Historial de Ventas", use_container_width=True):
+        if confirmar_reseteo:
+            conn = sqlite3.connect(DB_NAME)
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM ventas")
+            conn.commit()
+            conn.close()
+            st.success("¡El historial de ventas se ha eliminado correctamente!")
+            st.rerun()
+        else:
+            st.error("Por favor, marca la casilla de confirmación antes de proceder.")
