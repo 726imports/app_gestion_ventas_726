@@ -12,11 +12,17 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Estilos CSS personalizados para mejorar la vista móvil
+# Estilos CSS limpios y adaptables
 st.markdown("""
     <style>
-    .main { padding: 0px 10px; }
-    .stMetric { background-color: #f8f9fa; padding: 10px; border-radius: 10px; border: 1px solid #e9ecef; }
+    .main { padding: 0px 15px; }
+    h1 { color: #2563EB; font-weight: 700; padding-bottom: 10px; }
+    h3 { font-size: 1.2rem !important; margin-top: 15px !important; }
+    div.stButton > button {
+        width: 100%;
+        border-radius: 8px;
+        font-weight: 600;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -93,7 +99,7 @@ def get_ventas():
     conn.close()
     return df
 
-st.markdown("<h1 style='text-align: center; color: #1E3A8A;'>🏷️ 726 - Control de Ventas</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>🏷️ 726 - Control de Ventas</h1>", unsafe_allow_html=True)
 
 # Pestañas principales
 pestanas = st.tabs(["🛒 Nueva Venta", "📊 Panel", "📦 Catálogo", "📥 Exportar"])
@@ -130,7 +136,7 @@ with pestanas[0]:
         metodo_pago = st.selectbox("Método de Pago", ["Efectivo ARS", "Transferencia", "Mercado Pago", "Otro"])
         notas = st.text_area("Notas / Observaciones")
         
-        submit_btn = st.form_submit_button("✅ Registrar Venta")
+        submit_btn = st.form_submit_button("✅ Registrar Venta", use_container_width=True)
         if submit_btn:
             fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             conn = sqlite3.connect(DB_NAME)
@@ -189,7 +195,7 @@ with pestanas[2]:
         nuevo_costo = st.number_input("Costo Unitario ($)", min_value=0.0, step=500.0)
         nuevo_precio = st.number_input("Precio de Venta ($)", min_value=0.0, step=500.0)
         
-        btn_agregar = st.form_submit_button("Agregar al Catálogo")
+        btn_agregar = st.form_submit_button("Agregar al Catálogo", use_container_width=True)
         if btn_agregar:
             if nuevo_nombre and nuevo_talle:
                 conn = sqlite3.connect(DB_NAME)
